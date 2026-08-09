@@ -2,11 +2,10 @@
 
 import NoteList from '@/components/NoteList/NoteList';
 import Pagination from '@/components/Pagination/Pagination';
-import Modal from '@/components/Modal/Modal';
-import NoteForm from '@/components/NoteForm/NoteForm';
 import SearchBox from '@/components/SearchBox/SearchBox';
 import Loader from '@/components/Loader/Loader';
 import css from './NotesPage.module.css';
+import Link from 'next/link';
 
 import { useState } from 'react'
 
@@ -24,10 +23,6 @@ function NotesClient({tag}: Props) {
     const [searchQuery, setSearchQuery] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const closeModal = () => { setIsModalOpen(false) };
 
       const { data, isLoading} = useQuery({
         queryKey: ['notes', searchQuery, tag, currentPage],
@@ -52,17 +47,8 @@ function NotesClient({tag}: Props) {
                 <SearchBox onSearch={handleSearchChange} />
                 
                 {data && data.totalPages > 1 && <Pagination totalPages={data?.totalPages || 0} currentPage={currentPage} onPageChange={setCurrentPage} />}
-                <button className={css.button} onClick={() => setIsModalOpen(true) 
-                    
-                }>Create note +</button>
+                <Link href="/notes/action/create" className={css.button}>Create note +</Link>
             </header>
-             {isModalOpen && (
-            <Modal onClose={closeModal}>
-                <NoteForm 
-                    onClose={closeModal} 
-                />
-            </Modal>
-        )}
             {isLoading && <Loader />}
             {data && data.notes.length > 0 && (
     <NoteList notes={data.notes} />
@@ -72,8 +58,3 @@ function NotesClient({tag}: Props) {
 }
 
 export default NotesClient;
-
-
-
-
-

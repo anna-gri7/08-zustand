@@ -34,7 +34,7 @@ const description = tag ? `Notes with tag: ${tag}` : 'All notes on NoteHub';
           alt: `Notehub`,
         },
       ],
-      type: 'article',
+      type: 'website',
     },
   }
 }

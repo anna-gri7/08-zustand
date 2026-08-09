@@ -1,45 +1,23 @@
+"use client";
+
 import css from './NoteForm.module.css'
 import { useId } from "react";
-import * as Yup from "yup";
-
-import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import { createNote } from "..//../lib/api";
+import { useNoteDraftStore } from '@/lib/store/noteStore';
 
 import type { NoteTag } from '../../types/note'; 
 
 
-interface FormValues {
-    title: string;
-    content: string;
-    tag: NoteTag;
-}
-
-const initialValues: FormValues = {
-    title: "",
-    content: "",
-    tag: "Todo"
-}
-
-const FormSchema = Yup.object().shape({
-    title: Yup.string()
-    .min(3, "Title must be at least 3 characters")
-    .max(50, "Title is too long")
-        .required("Title is required"),
-    content: Yup.string()
-        .max(500, "Too long"),
-    tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
-    .required("Tag is required")
-});
-
-interface NoteFormProps { 
-    onClose: () => void;
+export default function NoteForm() {
     
-}
+const draft = useNoteDraftStore((state) => state.draft);
+const setDraft = useNoteDraftStore((state) => state.setDraft);
+const clearDraft = useNoteDraftStore((state) => state.clearDraft);
 
-export default function NoteForm({ onClose }: NoteFormProps) {
+    const router = useRouter();
     const fieldId = useId();
      const queryClient = useQueryClient();
 
@@ -47,46 +25,56 @@ export default function NoteForm({ onClose }: NoteFormProps) {
         mutationFn: createNote,
         onSuccess: () => { 
             queryClient.invalidateQueries({ queryKey: ['noteList'] });
-            onClose();
+            clearDraft();
+            router.push('/notes/filter/all');
            }
-       });
-
+      });
+    
+    const handleCreate = (formData: FormData) => {
+        const values = {
+            title: formData.get('title') as string,
+            content: formData.get('content') as string,
+            tag: formData.get('tag') as NoteTag,
+  };
+  createNoteM.mutate(values);
+};
 
 
     return (
-        <Formik initialValues={initialValues} validationSchema={FormSchema} onSubmit={(values) => createNoteM.mutate(values)}>
-            <Form className={css.form}>
+       
+            <form className={css.form} action={handleCreate}>
                 <div className={css.formGroup}>
                     <label htmlFor={`${fieldId}-title`}>Title</label>
-                    <Field type="text" id={`${fieldId}-title`} name="title" className={css.input} />
-                    < ErrorMessage name="title" component="span" className={css.error} />
+                <input type="text" id={`${fieldId}-title`} name="title" className={css.input} defaultValue={draft.title}
+                    onChange={(e) => setDraft({ title: e.target.value })} />
                 </div>
                 <div className={css.formGroup}>
                      <label htmlFor={`${fieldId}-content`} >Content</label>
-                    <Field as="textarea" id={`${fieldId}-content`}
-                        name="content"
-                        rows={8}
-                        className={css.textarea} />
-                    <ErrorMessage name="content" component="span" className={css.error} />
+                    <textarea id={`${fieldId}-content` }
+                    name="content"
+                    rows={8}
+                    className={css.textarea}
+                    defaultValue={draft.content}
+                    onChange={(e) => setDraft({ content: e.target.value })} />
                 </div>
 
                 <div className={css.formGroup}>
                     
                     <label htmlFor={`${fieldId}-tag`}>Tag</label>
-                    <Field as="select" id={`${fieldId}-tag`} name="tag" className={css.select} >
+                <select id={`${fieldId}-tag`} name="tag" className={css.select} defaultValue={draft.tag}
+                onChange={(e) => setDraft({ tag: e.target.value as NoteTag})}>
                         <option value="Todo">Todo</option>
                         <option value="Work">Work</option>
                         <option value="Personal">Personal</option>
                         <option value="Meeting">Meeting</option>
                         <option value="Shopping">Shopping</option>
-                    </Field>
+                </select>
                 </div>
 
                 <div className={css.actions}>
-                    <button type="button" className={css.cancelButton} onClick={onClose}> Cancel  </button>
+                    <button type="button" className={css.cancelButton} onClick={() => router.back() }> Cancel  </button>
                     <button type="submit" className={css.submitButton} disabled={ createNoteM.isPending} > {createNoteM.isPending ? "Creating..." : "Create note"} </button>
                 </div>
-            </Form>
-        </Formik>
+            </form>
     )
 }
